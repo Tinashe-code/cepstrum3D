@@ -18,6 +18,10 @@ die() { printf '\n\033[1;31mERROR: %s\033[0m\n' "$*"; exit 1; }
 
 [ -r "$ENV_FILE" ] || die "$ENV_FILE missing — copy deploy/production.env.example there and fill it in."
 set -a; . "$ENV_FILE"; set +a
+# The database lives on this server; setup-server.sh saved its address here.
+if [ -z "${DATABASE_URL:-}" ] && [ -r /etc/cepstrum3d/database-url ]; then
+  export DATABASE_URL="$(cat /etc/cepstrum3d/database-url)"
+fi
 grep -v '^\s*#' "$ENV_FILE" | grep -q 'CHANGE-ME' && die "Fill in every CHANGE-ME in $ENV_FILE first."
 for v in SHOP_DOMAIN API_DOMAIN DATABASE_URL JWT_SECRET COOKIE_SECRET REVALIDATE_SECRET NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY; do
   [ -n "${!v:-}" ] || die "$v is empty in $ENV_FILE"
@@ -57,7 +61,8 @@ rm -rf "$SERVER_DIR/static" && ln -s "$DATA_DIR/static" "$SERVER_DIR/static"
 
 # Settings file read by the backend services (systemd) — regenerated each deploy.
 {
-  grep -v '^\s*#' "$ENV_FILE" | grep -v '^\s*$'
+  grep -v '^\s*#' "$ENV_FILE" | grep -v '^\s*$' | grep -v '^DATABASE_URL=\s*$'
+  echo "DATABASE_URL=$DATABASE_URL"
   for v in STORE_CORS ADMIN_CORS VENDOR_CORS AUTH_CORS MERCUR_BACKEND_URL MERCUR_VENDOR_URL FILE_BACKEND_URL STOREFRONT_URL \
            VENDOR_PORTAL_URL STOREFRONT_REVALIDATE_URL STOREFRONT_REVALIDATE_SECRET; do
     printf '%s=%s\n' "$v" "${!v}"
@@ -74,6 +79,8 @@ say "Updating the database (migrations)"
 say "Installing services and web server config"
 sudo /usr/bin/cp "$APP_DIR"/deploy/systemd/* /etc/systemd/system/
 sudo /usr/bin/systemctl daemon-reload
+# Nightly database + photo backup (deploy/backup.sh)
+sudo /usr/bin/systemctl enable --now cepstrum3d-backup.timer
 sed -e "s/{SHOP_DOMAIN}/$SHOP_DOMAIN/g" -e "s/{API_DOMAIN}/$API_DOMAIN/g" -e "s/{ADMIN_EMAIL}/${ADMIN_EMAIL:-}/g" \
   "$APP_DIR/deploy/Caddyfile" | sudo /usr/bin/tee /etc/caddy/Caddyfile >/dev/null
 sudo /usr/bin/systemctl reload caddy

@@ -1,0 +1,11 @@
+[Unit]
+Description=Run the Cepstrum3D backup every night
+
+[Timer]
+# 02:30 Harare time (00:30 UTC); runs on next boot if the server was off
+OnCalendar=*-*-* 00:30:00 UTC
+Persistent=true
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target

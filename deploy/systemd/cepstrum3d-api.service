@@ -1,6 +1,6 @@
 [Unit]
 Description=Cepstrum3D backend (API, admin panel, vendor portal)
-After=network-online.target redis-server.service
+After=network-online.target redis-server.service postgresql.service
 Wants=network-online.target redis-server.service
 
 [Service]

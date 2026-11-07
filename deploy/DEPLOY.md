@@ -1,11 +1,11 @@
 # Putting Cepstrum3D online
 
-One small server runs everything: the shop, the backend, the admin panel, the vendor portal and Redis. The database stays on Neon. Caddy sets up HTTPS by itself.
+One small server in **Johannesburg** (the closest cloud region to Zimbabwe) runs everything: the shop, the backend, the admin panel, the vendor portal, the **PostgreSQL database** and Redis. Caddy sets up HTTPS by itself. Every night the database and product photos are backed up, on the server and to Cloudflare R2.
 
 ```
 customer ──► https://cepstrum3d.cepstrumtechnologies.com      ─┐
 admin    ──► https://api.cepstrum3d.cepstrumtechnologies.com/dashboard   ├─► Caddy ─► shop (port 3000)
-vendor   ──► https://api.cepstrum3d.cepstrumtechnologies.com/seller      │         └► backend (port 9000) ─► Neon + Redis
+vendor   ──► https://api.cepstrum3d.cepstrumtechnologies.com/seller      │         └► backend (port 9000) ─► PostgreSQL + Redis
 ```
 
 ## 1. The web addresses
@@ -33,7 +33,7 @@ If you use Cloudflare, set these records to **DNS only** (grey cloud). Caddy mak
 ## 2. The server
 
 **Free option: Oracle Cloud Always Free.**
-1. Sign up at cloud.oracle.com. The **home region** you pick can't be changed, and free servers only exist there. Pick **Germany Central (Frankfurt)** so the server sits next to the database (step 3).
+1. Sign up at cloud.oracle.com. The **home region** you pick can't be changed, and free servers only exist there. Your account uses **South Africa Central (Johannesburg)**, which is the best choice for Zimbabwe.
 2. Compute → Instances → Create:
    - **Image:** Ubuntu 24.04
    - **Shape:** Ampere A1 Flex, 2 OCPU, 12 GB RAM (the current free limit)
@@ -51,19 +51,38 @@ git clone https://github.com/YOU/cepstrum3d.git /tmp/c3d      # or upload the co
 bash /tmp/c3d/deploy/setup-server.sh
 ```
 
-## 3. The database (Neon)
+## 3. The database
 
-Keep the database in the **same region as the server**. Each cart action makes many database calls, so distance makes the shop slow. In Neon → your project → Settings, check the region:
+The database runs **on the server**, next to the backend, so each database call takes under a millisecond. (A database in another country makes every cart action wait on dozens of slow round trips.) `setup-server.sh` installs PostgreSQL 17, creates the database and a random password, and saves its address in `/etc/cepstrum3d/database-url`. You never need to type it.
 
-- **Already AWS Frankfurt (eu-central-1):** keep using it.
-- **Somewhere else:** create a new Neon project in **AWS Europe Central (Frankfurt)** and copy your data across. Run this from any machine with PostgreSQL tools:
+**Moving your data from Neon** (products, vendors, customers, promos, reviews). Do this once, after step 4 and before step 5. In Neon → your project → **Connect**, copy the connection string, then on the server:
 
 ```bash
-pg_dump "OLD_CONNECTION_STRING" --no-owner --no-acl -Fc -f cepstrum3d.dump
-pg_restore --no-owner --no-acl -d "NEW_CONNECTION_STRING" cepstrum3d.dump
+sudo -u cepstrum bash /opt/cepstrum3d/deploy/import-database.sh 'postgresql://…neon.tech/neondb?sslmode=require'
 ```
 
-Reset the Neon password before going live (Neon → Roles → Reset password).
+It prints how many products, vendors and orders it copied. Keep the Neon project for a week as a spare copy, then delete it. You can keep using Neon (or a local PostgreSQL) for development on your laptop; it is no longer connected to the live shop.
+
+**Starting fresh instead:** skip the import. `deploy.sh` creates the empty tables, and you create the admin login with step 5.4.
+
+### Backups
+
+`backup.sh` runs every night at 02:30 (Harare time):
+- It saves a full copy of the database in `/var/lib/cepstrum3d/backups/`, keeping the last 14 days.
+- With R2 set up, it also copies each backup **off the server** to Cloudflare R2 (kept 30 days), together with all product photos. R2 is free up to 10 GB.
+
+**Set up R2** (about 5 minutes, strongly recommended): Cloudflare dashboard → **R2** → create a bucket `cepstrum3d-backups` → **Manage API tokens** → create a token with *Object Read & Write* on that bucket. Then put the account ID and the two keys in `R2_*` in `production.env`.
+
+```bash
+sudo -u cepstrum bash /opt/cepstrum3d/deploy/backup.sh               # run a backup now
+systemctl list-timers cepstrum3d-backup.timer                        # when the next one runs
+sudo -u cepstrum bash /opt/cepstrum3d/deploy/restore-database.sh     # list backups (server + R2)
+sudo -u cepstrum bash /opt/cepstrum3d/deploy/restore-database.sh latest   # put the newest one back
+```
+
+**If the server is ever lost:** create a new one, then run steps 2, 4 and 5. After that:
+1. Run `restore-database.sh r2:cepstrum3d-<date>.dump`.
+2. Copy the photos back with `rclone copy r2:cepstrum3d-backups/static /var/lib/cepstrum3d/static`. It uses the same R2 settings.
 
 ## 4. Put the code on the server and fill in the settings
 
@@ -74,7 +93,7 @@ sudo nano /etc/cepstrum3d/production.env
 sudo chown root:cepstrum /etc/cepstrum3d/production.env && sudo chmod 640 /etc/cepstrum3d/production.env
 ```
 
-Fill in every `CHANGE-ME`. Make the secrets with `openssl rand -hex 32`.
+Fill in every `CHANGE-ME`. Make the secrets with `openssl rand -hex 32`. Leave `DATABASE_URL` empty, because the server already knows it.
 
 For a **private GitHub repo**, create a read-only **deploy key**:
 1. On the server, run `sudo -u cepstrum ssh-keygen -t ed25519`.
@@ -133,10 +152,11 @@ The shop is offline for about a minute while the backend restarts.
 | Piece | Cost |
 |---|---|
 | Server (Oracle Always Free) | $0 |
-| Database (Neon free) | $0 |
+| Database (PostgreSQL on the server) | $0 |
+| Backups (Cloudflare R2, up to 10 GB) | $0 |
 | Redis (on the server) | $0 |
 | Emails (Resend free, 3,000/month) | $0 |
 | Google Maps | Google's monthly free usage covers a small shop. Set a budget alert. |
 | Domain | ~$10–15 per year |
 
-**When traffic grows:** a bigger server, Neon's paid plan (more storage, longer backups), and Cloudflare R2 for product images.
+**When traffic grows:** a bigger server, or a managed database with more frequent backups, and Cloudflare R2 for serving product images.

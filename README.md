@@ -148,7 +148,7 @@ The pay-on-delivery test checks three cases:
 
 ## Putting it online
 
-See **[deploy/DEPLOY.md](deploy/DEPLOY.md)**. In short: one server (Oracle Cloud Always Free or a small VPS) runs the shop, backend, panels and Redis behind Caddy (automatic HTTPS); the database stays on Neon in the same region. `deploy/setup-server.sh` prepares the server once, `deploy/deploy.sh` builds and restarts everything.
+See **[deploy/DEPLOY.md](deploy/DEPLOY.md)**. In short: one server (Oracle Cloud Always Free in Johannesburg, or a small VPS) runs the shop, backend, panels, PostgreSQL and Redis behind Caddy (automatic HTTPS), with nightly backups to Cloudflare R2. `deploy/setup-server.sh` prepares the server once, `deploy/deploy.sh` builds and restarts everything.
 
 ## Delivery pricing
 
