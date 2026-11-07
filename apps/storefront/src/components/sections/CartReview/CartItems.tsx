@@ -1,0 +1,57 @@
+import { HttpTypes } from '@medusajs/types';
+
+import { CartItemsHeader, CartItemsProducts } from '@/components/cells';
+import { siteConfig } from "@/config/site"
+
+export const CartItems = ({ cart }: { cart: HttpTypes.StoreCart | null }) => {
+  if (!cart) return null;
+
+  const groupedItems: any = groupItemsBySeller(cart);
+
+  return Object.keys(groupedItems).map(key => (
+    <div
+      key={key}
+      className="mb-4"
+    >
+      <CartItemsHeader seller={groupedItems[key]?.seller} />
+      <CartItemsProducts
+        delete_item={false}
+        change_quantity={false}
+        products={groupedItems[key].items || []}
+        currency_code={cart.currency_code}
+      />
+    </div>
+  ));
+};
+
+function groupItemsBySeller(cart: HttpTypes.StoreCart) {
+  const groupedBySeller: any = {};
+
+  cart.items?.forEach((item: any) => {
+    const seller = item.offer?.seller;
+    if (seller) {
+      if (!groupedBySeller[seller.id]) {
+        groupedBySeller[seller.id] = {
+          seller: { ...seller, photo: seller.photo ?? seller.logo },
+          items: []
+        };
+      }
+      groupedBySeller[seller.id].items.push(item);
+    } else {
+      if (!groupedBySeller['fleek']) {
+        groupedBySeller['fleek'] = {
+          seller: {
+            name: siteConfig.name,
+            id: 'fleek',
+            photo: siteConfig.logoMark,
+            created_at: new Date()
+          },
+          items: []
+        };
+      }
+      groupedBySeller['fleek'].items.push(item);
+    }
+  });
+
+  return groupedBySeller;
+}

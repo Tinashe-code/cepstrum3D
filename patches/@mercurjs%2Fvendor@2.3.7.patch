@@ -1,0 +1,45 @@
+diff --git a/dist/chunk-QHMX7UKI.js b/dist/chunk-QHMX7UKI.js
+index 60dddcc738df32a13d1cd772f42fc9db2ed3e715..f9b5f03ba3537d01634c7261543b5483ffb301d9 100644
+--- a/dist/chunk-QHMX7UKI.js
++++ b/dist/chunk-QHMX7UKI.js
+@@ -364,7 +364,12 @@ var useInventoryTableQuery = ({
+       "mid_code",
+       "hs_code",
+       "width",
+-      "height"
++      "height",
++      // Cepstrum3D patch: extra filters (title / reservations / stock level),
++      // applied by packages/api/src/lib/inventory/inventory-filters.ts
++      "title",
++      "reservations",
++      "stock_status"
+     ],
+     prefix
+   );
+@@ -383,7 +388,10 @@ var useInventoryTableQuery = ({
+     location_levels: {
+       location_id: params.location_id || []
+     },
+-    id: params.id ? params.id.split(",") : void 0
++    id: params.id ? params.id.split(",") : void 0,
++    title: params.title || void 0,
++    reservations: params.reservations || void 0,
++    stock_status: params.stock_status ? params.stock_status.split(",") : void 0
+   };
+   return {
+     searchParams,
+diff --git a/dist/fulfillment-EBULAIBY.js b/dist/fulfillment-EBULAIBY.js
+index 83eef9e629b5bb8249798a10d83e9264a4013b62..37be8e455fd46e48035cf0d66fe7f2f1125eaf5f 100644
+--- a/dist/fulfillment-EBULAIBY.js
++++ b/dist/fulfillment-EBULAIBY.js
+@@ -360,7 +360,9 @@ function OrderCreateFulfillmentForm({
+       location_id: selectedLocationId,
+       requires_shipping: true,
+       // shipping_option_id: shippingOptionId,
+-      // no_notification: !data.send_notification,
++      // Cepstrum3D patch: send the "Notify customer" switch (the backend moves it
++      // into additional_data — packages/api/src/lib/orders/notify-flag-middleware.ts)
++      no_notification: !data.send_notification,
+       items: Object.entries(data.quantity).filter(
+         ([id, value]) => !!value && data.selection?.[id] !== false && itemShippingProfileMap[id] === selectedShippingProfileId
+       ).map(([id, quantity]) => ({

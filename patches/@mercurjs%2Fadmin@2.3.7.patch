@@ -1,0 +1,30 @@
+diff --git a/dist/chunk-GF4BJFSQ.js b/dist/chunk-GF4BJFSQ.js
+index 4fdd6a3ce17e6399bd8d1386e56f784775865794..6ea91cbdac63254089914b6511ccb9dfbb06d500 100644
+--- a/dist/chunk-GF4BJFSQ.js
++++ b/dist/chunk-GF4BJFSQ.js
+@@ -334,7 +334,12 @@ var useInventoryTableQuery = ({
+       "mid_code",
+       "hs_code",
+       "width",
+-      "height"
++      "height",
++      // Cepstrum3D patch: extra filters (title / reservations / stock level),
++      // applied by packages/api/src/lib/inventory/inventory-filters.ts
++      "title",
++      "reservations",
++      "stock_status"
+     ],
+     prefix
+   );
+@@ -354,7 +359,10 @@ var useInventoryTableQuery = ({
+       location_id: params.location_id || []
+     },
+     seller_id: params.seller_id ? params.seller_id.split(",") : void 0,
+-    id: params.id ? params.id.split(",") : void 0
++    id: params.id ? params.id.split(",") : void 0,
++    title: params.title || void 0,
++    reservations: params.reservations || void 0,
++    stock_status: params.stock_status ? params.stock_status.split(",") : void 0
+   };
+   return {
+     searchParams,
