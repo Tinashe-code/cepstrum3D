@@ -102,7 +102,7 @@ export async function setupDemoDiscounts(container: MedusaContainer) {
           // Sale prices are scoped per offer via `rules.offer_id`.
           prices: prices as never,
         },
-      ],
+      ] as never,
     },
   });
   logger.info(`Created "${SALE_TITLE}" sale with ${prices.length} discounted offer prices.`);

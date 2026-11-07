@@ -1,0 +1,18 @@
+[Unit]
+Description=Cepstrum3D shop (Next.js storefront)
+After=network-online.target cepstrum3d-api.service
+Wants=network-online.target
+
+[Service]
+User=cepstrum
+WorkingDirectory=/opt/cepstrum3d/apps/storefront/.next/standalone/apps/storefront
+EnvironmentFile=/var/lib/cepstrum3d/runtime.env
+Environment=PORT=3000
+Environment=HOSTNAME=127.0.0.1
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=5
+MemoryMax=800M
+
+[Install]
+WantedBy=multi-user.target

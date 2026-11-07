@@ -10,7 +10,12 @@
  *   FREE_DELIVERY_MIN_ORDER=300    whole-cart amount for free delivery (0 = off)
  *   FREE_DELIVERY_ORDER_CITIES=Harare   where that applies, comma separated ("" = anywhere)
  *   GOOGLE_MAPS_API_KEY=...        Geocoding + Routes APIs; without it distances are estimated
+ *
+ * The free-delivery amount and towns can also be changed live in the admin
+ * panel (Delivery page). Those values are saved on the store record and win
+ * over .env — see ./overrides.ts.
  */
+import { getOverrides } from "./overrides";
 
 const num = (v: string | undefined, fallback: number) => {
   const n = Number(v);
@@ -23,7 +28,7 @@ export const parseCities = (v: string | undefined | null) =>
     .map((c) => c.trim())
     .filter(Boolean);
 
-export const getDeliverySettings = () => ({
+export const envDeliverySettings = () => ({
   baseFee: num(process.env.DELIVERY_BASE_FEE, 2),
   perKm: num(process.env.DELIVERY_PER_KM, 0.5),
   minFee: num(process.env.DELIVERY_MIN_FEE, 3),
@@ -32,6 +37,9 @@ export const getDeliverySettings = () => ({
   freeOrderCities: parseCities(process.env.FREE_DELIVERY_ORDER_CITIES ?? "Harare"),
   googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || "",
 });
+
+/** .env values with any admin-panel changes applied on top. */
+export const getDeliverySettings = () => ({ ...envDeliverySettings(), ...getOverrides() });
 
 export type DeliverySettings = ReturnType<typeof getDeliverySettings>;
 

@@ -1,0 +1,19 @@
+[Unit]
+Description=Cepstrum3D backend (API, admin panel, vendor portal)
+After=network-online.target redis-server.service
+Wants=network-online.target redis-server.service
+
+[Service]
+User=cepstrum
+WorkingDirectory=/opt/cepstrum3d/packages/api/.medusa/server
+EnvironmentFile=/var/lib/cepstrum3d/runtime.env
+Environment=PORT=9000
+Environment=HOST=127.0.0.1
+ExecStart=/opt/cepstrum3d/packages/api/node_modules/.bin/medusa start
+Restart=always
+RestartSec=5
+# A runaway process is restarted instead of freezing the server
+MemoryMax=1500M
+
+[Install]
+WantedBy=multi-user.target

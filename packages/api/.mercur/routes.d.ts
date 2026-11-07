@@ -513,6 +513,15 @@ export type Routes = {
             };
         };
         custom: typeof import("../src/api/admin/custom/route");
+        deliverySettings: typeof import("../src/api/admin/delivery-settings/route");
+        listings: typeof import("../src/api/admin/listings/route") & {
+            offers: {
+                $id: typeof import("../src/api/admin/listings/offers/[id]/route");
+            };
+            products: {
+                $id: typeof import("../src/api/admin/listings/products/[id]/route");
+            };
+        };
     };
     auth: {
         $actorType: {
@@ -651,6 +660,9 @@ export type Routes = {
         delivery: {
             places: typeof import("../src/api/store/delivery/places/route");
             settings: typeof import("../src/api/store/delivery/settings/route");
+        };
+        productReviews: typeof import("../src/api/store/product-reviews/route") & {
+            $productId: typeof import("../src/api/store/product-reviews/[product_id]/route");
         };
         saleLimits: typeof import("../src/api/store/sale-limits/route");
     };
@@ -942,5 +954,6 @@ export type Routes = {
         };
         stores: typeof import("@mercurjs/core/api/vendor/stores/route");
         uploads: typeof import("@mercurjs/core/api/vendor/uploads/route");
+        listings: typeof import("../src/api/vendor/listings/route");
     };
 };

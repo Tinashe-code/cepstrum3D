@@ -16,9 +16,33 @@ const dashboardAppDir = (name: string) => {
   return fs.existsSync(bundled) ? bundled : path.join(__dirname, `../../apps/${name}`)
 }
 
+// Production (NODE_ENV=production + REDIS_URL): events, workflows and locks move
+// to Redis so background work survives restarts. Development keeps Medusa's
+// in-memory versions, even if REDIS_URL is in your local .env.
+const REDIS_URL = process.env.NODE_ENV === 'production' ? process.env.REDIS_URL : undefined
+const redisModules = REDIS_URL
+  ? [
+      { resolve: '@medusajs/medusa/event-bus-redis', options: { redisUrl: REDIS_URL } },
+      { resolve: '@medusajs/medusa/workflow-engine-redis', options: { redis: { redisUrl: REDIS_URL } } },
+      {
+        resolve: '@medusajs/medusa/locking',
+        options: {
+          providers: [
+            { resolve: '@medusajs/medusa/locking-redis', id: 'locking-redis', is_default: true, options: { redisUrl: REDIS_URL } },
+          ],
+        },
+      },
+    ]
+  : []
+
 module.exports = withMercur({
   projectConfig: {
     databaseUrl: process.env.DATABASE_URL,
+    redisUrl: REDIS_URL,
+    // One small server: "shared" runs the API and background jobs in one process.
+    workerMode: (process.env.MEDUSA_WORKER_MODE as 'shared' | 'worker' | 'server') || 'shared',
+    databaseDriverOptions:
+      process.env.DATABASE_SSL === 'true' ? { connection: { ssl: { rejectUnauthorized: false } } } : undefined,
     http: {
       storeCors: process.env.STORE_CORS!,
       adminCors: process.env.ADMIN_CORS!,
@@ -35,6 +59,7 @@ module.exports = withMercur({
     seller_registration: true
   },
   modules: [
+    ...redisModules,
     {
       resolve: '@mercurjs/core/modules/admin-ui',
       options: {

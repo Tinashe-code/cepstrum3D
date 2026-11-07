@@ -379,7 +379,7 @@ export default async function seedMarketplace({ container }: ExecArgs) {
     const { result } = await createApiKeysWorkflow(container).run({
       input: { api_keys: [{ title: "Storefront", type: "publishable", created_by: "" }] },
     });
-    apiKey = result[0];
+    apiKey = result[0] as never;
   }
   try {
     await linkSalesChannelsToApiKeyWorkflow(container).run({ input: { id: apiKey.id, add: [salesChannel.id] } });
@@ -538,7 +538,7 @@ export default async function seedMarketplace({ container }: ExecArgs) {
     const { result: zones } = await createServiceZonesWorkflow(container).run({
       input: {
         data: [{
-          fulfillment_set_id: withSet.fulfillment_sets[0].id,
+          fulfillment_set_id: withSet.fulfillment_sets![0]!.id,
           name: `${cfg.name} — Zimbabwe`,
           geo_zones: COUNTRIES.map((country_code) => ({ country_code, type: "country" as const })),
         }],

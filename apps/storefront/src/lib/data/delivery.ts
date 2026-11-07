@@ -39,7 +39,8 @@ export async function getDeliverySettings(): Promise<DeliverySettings | null> {
   try {
     const res = await fetch(`${BACKEND}/store/delivery/settings`, {
       headers: { 'x-publishable-api-key': KEY },
-      next: { revalidate: 300 },
+      // 'delivery-settings' is refreshed by the backend when an admin saves the Delivery page.
+      next: { revalidate: 300, tags: ['delivery-settings'] },
     });
     if (!res.ok) return null;
     return ((await res.json()) as { delivery: DeliverySettings }).delivery;
