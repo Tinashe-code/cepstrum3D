@@ -8,12 +8,20 @@ const BACKEND_URL = process.env.MEDUSA_BACKEND_URL;
 const PUBLISHABLE_API_KEY = process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY;
 const DEFAULT_REGION = process.env.NEXT_PUBLIC_DEFAULT_REGION || 'us';
 
+/**
+ * The shop's public address for redirects. Behind the web server (Caddy) the
+ * request looks like it came to http://localhost:3000, so redirects built from
+ * it would send visitors there. NEXT_PUBLIC_BASE_URL is set by deploy.sh.
+ */
+const publicOrigin = (req: NextRequest) =>
+  (process.env.NEXT_PUBLIC_BASE_URL || '').replace(/\/$/, '') || req.nextUrl.origin;
+
 const makeAuthRedirect = (
   req: NextRequest,
   locale: string,
   reason: 'sessionRequired' | 'sessionExpired'
 ) => {
-  const redirectUrl = new URL(`/${locale}/login`, req.url);
+  const redirectUrl = new URL(`/${locale}/login`, publicOrigin(req));
 
   redirectUrl.searchParams.set(reason, 'true');
 
@@ -158,7 +166,7 @@ export async function middleware(request: NextRequest) {
   if (!urlHasCountryCode && countryCode) {
     const redirectPath = pathname === '/' ? '' : pathname;
     const queryString = request.nextUrl.search ? request.nextUrl.search : '';
-    const redirectUrl = `${request.nextUrl.origin}/${countryCode}${redirectPath}${queryString}`;
+    const redirectUrl = `${publicOrigin(request)}/${countryCode}${redirectPath}${queryString}`;
     return NextResponse.redirect(redirectUrl, 307);
   }
 
