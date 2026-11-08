@@ -87,7 +87,7 @@ export const ProductVariants = ({
                 return {
                   value: v.value,
                   image:
-                    variantImage(variant as never) ||
+                    variantImage(variant as never, product as never) ||
                     imageNamedFor(product.images, v.value) ||
                     productImage(product as never) ||
                     "/images/placeholder.svg",

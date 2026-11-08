@@ -8,7 +8,7 @@ import { imageNamedFor, variantImage as imageOfVariant } from '@/lib/helpers/pro
 
 /**
  * Product images. When a colour is chosen (?colour=Red), that colour's picture
- * (the variant's thumbnail or first linked image) is shown first.
+ * (the image assigned to that variant) is shown first.
  */
 export const ProductGallery = ({
   images,
@@ -30,7 +30,8 @@ export const ProductGallery = ({
       )
     : null;
   const variantImage = chosen
-    ? imageOfVariant(chosen as never) || imageNamedFor(images, colour)
+    ? imageOfVariant(chosen as never, { thumbnail: images[0]?.url, variants } as never) ||
+      imageNamedFor(images, colour)
     : null;
 
   const ordered = variantImage

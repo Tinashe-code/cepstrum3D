@@ -17,6 +17,8 @@ const OFFER_FIELDS =
   '+calculated_price,+inventory_quantity,' +
   '+product.id,+product.title,+product.handle,+product.thumbnail';
 
+const STOCK_REFRESH_SECONDS = 300;
+
 export const listOffers = async ({
   productId,
   sellerId,
@@ -38,10 +40,15 @@ export const listOffers = async ({
       ? await getRegion(countryCode)
       : null;
 
-  const next = getGlobalCacheOptions(
-    CACHE_TAGS.offers,
-    productId ? CACHE_TAGS.productOffers(productId) : undefined
-  );
+  // Stock lives on the offer, so as a backstop to the backend's refresh
+  // webhook it is re-read at least every 5 minutes.
+  const next = {
+    ...getGlobalCacheOptions(
+      CACHE_TAGS.offers,
+      productId ? CACHE_TAGS.productOffers(productId) : undefined
+    ),
+    revalidate: STOCK_REFRESH_SECONDS,
+  };
 
   return (
     sdk.store.offers.query({
@@ -114,7 +121,7 @@ export const retrieveOffer = async (
       fetchOptions: {
         headers: { ...(await getAuthHeaders()) },
         cache: 'force-cache',
-        next: getGlobalCacheOptions(CACHE_TAGS.offers, CACHE_TAGS.offer(id)),
+        next: { ...getGlobalCacheOptions(CACHE_TAGS.offers, CACHE_TAGS.offer(id)), revalidate: STOCK_REFRESH_SECONDS },
       },
     } as never) as unknown as Promise<{ offer: OfferDTO }>
   )
