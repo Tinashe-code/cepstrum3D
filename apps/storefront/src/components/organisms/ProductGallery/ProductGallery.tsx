@@ -4,10 +4,11 @@ import { HttpTypes } from '@medusajs/types';
 import { useSearchParams } from 'next/navigation';
 
 import { GalleryCarousel } from '@/components/organisms';
+import { imageNamedFor, variantImage as imageOfVariant } from '@/lib/helpers/product-image';
 
 /**
  * Product images. When a colour is chosen (?colour=Red), that colour's picture
- * (the variant thumbnail) is shown first.
+ * (the variant's thumbnail or first linked image) is shown first.
  */
 export const ProductGallery = ({
   images,
@@ -21,12 +22,15 @@ export const ProductGallery = ({
 
   if (!images || images.length === 0) return null;
 
-  const variantImage = colour
+  const chosen = colour
     ? variants.find(v =>
         (v.options ?? []).some(
           o => /^colou?r$/i.test(o.option?.title ?? '') && o.value === colour
         )
-      )?.thumbnail
+      )
+    : null;
+  const variantImage = chosen
+    ? imageOfVariant(chosen as never) || imageNamedFor(images, colour)
     : null;
 
   const ordered = variantImage

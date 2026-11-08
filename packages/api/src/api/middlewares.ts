@@ -19,6 +19,7 @@ import { revalidateAfterPriceListChange } from "../lib/storefront-cache";
 import { expandCategoryRulesInBody } from "../lib/promotions/category-descendants";
 import { guardRecipientCodes, guardRecipientCodesAtCheckout } from "../lib/promotions/recipient";
 import { refreshDeliveryOverrides } from "../lib/delivery/overrides";
+import { mergeIntoPendingProductChange } from "../lib/listings/merge-product-changes";
 import {
   emailAdminsOnNewProduct,
   emailVendorOnProductDecision,
@@ -101,6 +102,17 @@ export default defineMiddlewares({
       matcher: "/store/product-reviews/:product_id",
       middlewares: [authenticate("customer", ["session", "bearer"])],
     },
+    // ---- Vendor edits pile into one approval request per product (src/lib/listings/merge-product-changes.ts)
+    ...[
+      "/vendor/products/:id",
+      "/vendor/products/:id/variants",
+      "/vendor/products/:id/variants/:variant_id",
+      "/vendor/products/:id/attributes/batch",
+    ].map((matcher) => ({
+      method: ["POST", "DELETE"] as ("POST" | "DELETE")[],
+      matcher,
+      middlewares: [mergeIntoPendingProductChange],
+    })),
     // ---- Listing approval / suspension (src/lib/listings)
     { method: ["GET"], matcher: "/store/offers", middlewares: [hideBlockedOffers] },
     { method: ["GET"], matcher: "/store/offers/:id", middlewares: [hideBlockedOffer] },

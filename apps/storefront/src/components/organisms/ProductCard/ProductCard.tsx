@@ -12,6 +12,7 @@ import { HeartFilledIcon, HeartIcon } from "@/icons"
 import { getProductPrice } from "@/lib/helpers/get-product-price"
 import { toast } from "@/lib/helpers/toast"
 import { cn } from "@/lib/utils"
+import { productImage } from "@/lib/helpers/product-image"
 import { Product } from "@/types/product"
 
 type Variant = HttpTypes.StoreProductVariant & { offer_id?: string | null }
@@ -78,6 +79,8 @@ export const ProductCard = ({
     !!price && pctOff > 0 && price.calculated_price !== price.original_price
 
   const productName = String(product.title || "Product")
+  // Main image, or the first image when no main image was chosen
+  const cardImage = productImage(product)
   const rating = (product as { rating?: { average: number; count: number } }).rating
   const href = `/products/${product.handle}`
 
@@ -105,8 +108,8 @@ export const ProductCard = ({
               priority
               fetchPriority="high"
               src={
-                product.thumbnail
-                  ? decodeURIComponent(product.thumbnail)
+                cardImage
+                  ? decodeURIComponent(cardImage)
                   : "/images/placeholder.svg"
               }
               alt={`${productName} image`}
@@ -116,7 +119,7 @@ export const ProductCard = ({
               className={cn(
                 "object-contain aspect-square w-full object-center h-full transition-transform duration-300 rounded-xs",
                 actions ? "group-hover:scale-[1.03]" : "lg:group-hover:-mt-14",
-                !product.thumbnail && "opacity-30"
+                !cardImage && "opacity-30"
               )}
               data-testid="product-card-image"
             />
@@ -271,7 +274,7 @@ function AddToCartButton({
     setAdding(true)
     onAddToCart(
       {
-        thumbnail: product.thumbnail || "",
+        thumbnail: productImage(product) || "",
         product_title: product.title,
         quantity: 1,
         subtotal: unitAmount!,

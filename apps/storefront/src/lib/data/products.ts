@@ -12,7 +12,7 @@ import { getRegion, retrieveRegion } from './regions';
 import { withRatings } from './reviews';
 
 const PRODUCT_LIST_FIELDS =
-  '*variants.calculated_price,+variants.inventory_quantity,*variants.options,*attribute_values,*attribute_values.attribute';
+  '*variants.calculated_price,+variants.inventory_quantity,*variants.options,+variants.thumbnail,*variants.images,*attribute_values,*attribute_values.attribute';
 
 export type SearchFacetBucket = { value: string; count: number };
 

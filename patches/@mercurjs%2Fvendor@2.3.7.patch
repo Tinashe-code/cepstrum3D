@@ -43,3 +43,22 @@ index 83eef9e629b5bb8249798a10d83e9264a4013b62..37be8e455fd46e48035cf0d66fe7f2f1
        items: Object.entries(data.quantity).filter(
          ([id, value]) => !!value && data.selection?.[id] !== false && itemShippingProfileMap[id] === selectedShippingProfileId
        ).map(([id, quantity]) => ({
+diff --git a/dist/media-5IJEFAYC.js b/dist/media-5IJEFAYC.js
+index 4bf7d7ff8e3a39701a839efd663d125499570c8e..5e8bc0f41df00b8a0e8369ae6d3f9cd25293c27d 100644
+--- a/dist/media-5IJEFAYC.js
++++ b/dist/media-5IJEFAYC.js
+@@ -182,12 +182,12 @@ var EditVariantMediaForm = ({
+             },
+             image.id
+           )) }) }),
+-          /* @__PURE__ */ jsxs("div", { className: "border-ui-border-base bg-ui-bg-base hidden w-80 border-l lg:block", children: [
++          /* @__PURE__ */ jsxs("div", { className: "border-ui-border-base bg-ui-bg-base hidden w-80 border-l lg:block overflow-auto", children: [
+             /* @__PURE__ */ jsxs("div", { className: "border-ui-border-base flex flex-col gap-y-1 border-b px-4 py-4", children: [
+               /* @__PURE__ */ jsx("span", { className: "text-ui-fg-base txt-compact-small-plus", children: t("products.media.availableImages") }),
+               /* @__PURE__ */ jsx("span", { className: "text-ui-fg-muted txt-small", children: t("products.media.selectToAdd") })
+             ] }),
+-            /* @__PURE__ */ jsx("div", { className: "overflow-auto", children: availableImages.length ? /* @__PURE__ */ jsx("div", { className: "grid grid-cols-2 gap-4 p-4", children: availableImages.map((image) => /* @__PURE__ */ jsx(
++            /* @__PURE__ */ jsx("div", { children: availableImages.length ? /* @__PURE__ */ jsx("div", { className: "grid grid-cols-2 gap-4 p-4", children: availableImages.map((image) => /* @__PURE__ */ jsx(
+               UnassociatedImageItem,
+               {
+                 media: image,

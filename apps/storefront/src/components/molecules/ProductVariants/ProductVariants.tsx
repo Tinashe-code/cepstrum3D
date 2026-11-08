@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react"
 import Image from "next/image"
+
+import { imageNamedFor, productImage, variantImage } from "@/lib/helpers/product-image"
 import { HttpTypes } from "@medusajs/types"
 
 import { Chip } from "@/components/atoms"
@@ -84,7 +86,11 @@ export const ProductVariants = ({
                 const variant = variantFor(title, v.value)
                 return {
                   value: v.value,
-                  image: variant?.thumbnail || product.thumbnail || "/images/placeholder.svg",
+                  image:
+                    variantImage(variant as never) ||
+                    imageNamedFor(product.images, v.value) ||
+                    productImage(product as never) ||
+                    "/images/placeholder.svg",
                   available: inStock(variant),
                 }
               })}
