@@ -133,7 +133,7 @@ export default async function Home({
             "@type": "Organization",
             name: siteName,
             url: `${baseUrl}/${locale}`,
-            logo: `${baseUrl}/favicon.ico`,
+            logo: `${baseUrl}/icon.svg`,
           }),
         }}
       />
