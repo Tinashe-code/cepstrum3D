@@ -28,6 +28,18 @@ export const siteConfig = {
   returnsPolicy:
     "Unused items in their original packaging can be returned within 7 days of delivery. Contact the vendor from your order page to arrange a return.",
 
+  /** Where customers can reach you (Help & FAQs, policy pages). Leave "" to hide. */
+  supportEmail: "",
+  /** WhatsApp number in international format without + or spaces, e.g. "263771234567". */
+  supportWhatsApp: "",
+
+  /** Footer "Connect" links. Leave "" to hide one. */
+  social: {
+    facebook: "",
+    instagram: "",
+    linkedin: "",
+  },
+
   /** In the cart, show "Only N left" when a vendor has fewer than this many in stock. */
   lowStockThreshold: 10,
 } as const

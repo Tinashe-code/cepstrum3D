@@ -33,7 +33,7 @@ export const Header = async ({ locale } : {
         <div className="flex items-center justify-center gap-x-6 gap-y-1 flex-wrap px-4 py-2 text-center">
           <span>🚚 Delivery across Zimbabwe</span>
           <span className="hidden sm:inline">💵 Pay on delivery on most items</span>
-          <span className="hidden md:inline">📱 EcoCash · OneMoney · Card</span>
+          <span className="hidden md:inline">🎁 Free delivery in Harare on qualifying orders</span>
         </div>
       </div>
       <div className="flex py-2 lg:px-8 px-4 md:px-5" data-testid="header-top">

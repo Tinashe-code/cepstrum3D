@@ -25,6 +25,16 @@ const LocalizedClientLink = ({
   
   const locale = params?.locale || pathname?.split('/')[1] || 'en'
 
+  // Full addresses (the vendor portal, WhatsApp, email…) are used as they are,
+  // not prefixed with the country code.
+  if (/^(https?:|mailto:|tel:)/.test(href)) {
+    return (
+      <a href={href} {...props}>
+        {children}
+      </a>
+    )
+  }
+
   return (
     <Link href={`/${locale}${href}`} {...props}>
       {children}

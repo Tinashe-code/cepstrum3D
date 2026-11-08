@@ -40,6 +40,7 @@ export function Footer() {
           </nav>
         </div>
 
+        {footerLinks.connect.length > 0 && (
         <div className="p-6 border rounded-sm" data-testid="footer-connect">
           <h2 className="heading-sm text-primary mb-3 uppercase">connect</h2>
           <nav className="space-y-3" aria-label="Social media navigation">
@@ -59,6 +60,7 @@ export function Footer() {
             ))}
           </nav>
         </div>
+        )}
       </div>
 
       <div className="py-6 border rounded-sm " data-testid="footer-copyright">
