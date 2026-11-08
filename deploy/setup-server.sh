@@ -16,6 +16,15 @@ APP_USER="cepstrum"
 APP_DIR="/opt/cepstrum3d"
 
 say() { printf '\n\033[1;33m==> %s\033[0m\n' "$*"; }
+die() { printf '\n\033[1;31mERROR: %s\033[0m\n' "$*"; exit 1; }
+
+# The shop needs ~1 GB to run and ~3 GB while building. Oracle's free
+# VM.Standard.E2.1.Micro has 1 GB, which is too small; use VM.Standard.A1.Flex.
+RAM_MB=$(awk '/MemTotal/ {print int($2/1024)}' /proc/meminfo)
+if [ "$RAM_MB" -lt 3500 ] && [ "${FORCE_SMALL_SERVER:-}" != "1" ]; then
+  die "This server has only ${RAM_MB} MB of RAM. Cepstrum3D needs at least 4 GB (6 GB+ recommended).
+On Oracle, create a VM.Standard.A1.Flex instance (1 OCPU / 6 GB or more) instead of VM.Standard.E2.1.Micro."
+fi
 
 say "System packages"
 sudo apt-get update -y
@@ -37,9 +46,16 @@ fi
 say "Redis: local only, no disk persistence needed for events"
 sudo sed -i 's/^#\?\s*bind .*/bind 127.0.0.1 ::1/' /etc/redis/redis.conf
 sudo sed -i 's/^#\?\s*maxmemory .*/maxmemory 256mb/' /etc/redis/redis.conf
-grep -q '^maxmemory ' /etc/redis/redis.conf || echo 'maxmemory 256mb' | sudo tee -a /etc/redis/redis.conf >/dev/null
+sudo grep -q '^maxmemory ' /etc/redis/redis.conf || echo 'maxmemory 256mb' | sudo tee -a /etc/redis/redis.conf >/dev/null
 sudo systemctl enable --now redis-server
 sudo systemctl restart redis-server
+
+say "Swap (building the shop needs memory)"
+if ! swapon --show | grep -q /swapfile; then
+  sudo fallocate -l 4G /swapfile || sudo dd if=/dev/zero of=/swapfile bs=1M count=4096
+  sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile
+  echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab >/dev/null
+fi
 
 say "PostgreSQL 17 (the shop's database, on this server, local connections only)"
 if ! command -v /usr/lib/postgresql/17/bin/postgres >/dev/null 2>&1; then
@@ -50,17 +66,26 @@ if ! command -v /usr/lib/postgresql/17/bin/postgres >/dev/null 2>&1; then
   sudo apt-get update -y && sudo apt-get install -y postgresql-17
 fi
 sudo systemctl enable --now postgresql
-# Modest tuning for a 12 GB server that also runs the shop
+# Memory sized to this server (it also runs the shop): 1/8 of RAM for the database cache
+PG_SHARED=$(( RAM_MB / 8 )); [ "$PG_SHARED" -gt 2048 ] && PG_SHARED=2048
 PGCONF=/etc/postgresql/17/main/conf.d/cepstrum3d.conf
-sudo tee "$PGCONF" >/dev/null <<'CONF'
+sudo tee "$PGCONF" >/dev/null <<CONF
 listen_addresses = 'localhost'
-shared_buffers = 1GB
-effective_cache_size = 4GB
-work_mem = 16MB
-maintenance_work_mem = 256MB
-max_connections = 100
+shared_buffers = ${PG_SHARED}MB
+effective_cache_size = $(( RAM_MB / 2 ))MB
+work_mem = 8MB
+maintenance_work_mem = 128MB
+max_connections = 60
 CONF
 sudo systemctl restart postgresql
+for i in $(seq 1 30); do
+  sudo -u postgres pg_isready -q && break
+  if [ "$i" = 30 ]; then
+    sudo tail -15 /var/log/postgresql/postgresql-17-main.log
+    die "PostgreSQL didn't start (log above)."
+  fi
+  sleep 1
+done
 # Database + user with a random password, saved once (re-runs keep it)
 sudo mkdir -p /etc/cepstrum3d
 if [ ! -f /etc/cepstrum3d/database-url ]; then
@@ -78,13 +103,6 @@ fi
 
 say "rclone (copies nightly backups to Cloudflare R2)"
 command -v rclone >/dev/null || sudo apt-get install -y rclone
-
-say "Swap (building the shop needs memory)"
-if ! swapon --show | grep -q /swapfile; then
-  sudo fallocate -l 4G /swapfile || sudo dd if=/dev/zero of=/swapfile bs=1M count=4096
-  sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile
-  echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab >/dev/null
-fi
 
 say "Firewall: open 80 and 443 (Oracle images block them by default)"
 for port in 80 443; do
