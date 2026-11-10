@@ -20,6 +20,7 @@ import { expandCategoryRulesInBody } from "../lib/promotions/category-descendant
 import { guardRecipientCodes, guardRecipientCodesAtCheckout } from "../lib/promotions/recipient";
 import { refreshDeliveryOverrides } from "../lib/delivery/overrides";
 import { mergeIntoPendingProductChange } from "../lib/listings/merge-product-changes";
+import { matchAttributeFilters } from "../lib/catalog/attribute-filter";
 import {
   emailAdminsOnNewProduct,
   emailVendorOnProductDecision,
@@ -135,6 +136,12 @@ export default defineMiddlewares({
       method: ["GET"],
       matcher: "/store/products*",
       middlewares: [fillSaleOfferIds],
+    },
+    {
+      // Material etc. filters: match variant options OR product attributes.
+      method: ["GET"],
+      matcher: "/store/products",
+      middlewares: [matchAttributeFilters],
     },
     {
       method: ["POST"],
