@@ -1,11 +1,18 @@
 import LocalizedClientLink from "@/components/molecules/LocalizedLink/LocalizedLink"
 import Image from "next/image"
 
+/**
+ * A category tile. Shows the picture set in admin → Categories → Media (or its
+ * Icon); without one, the built-in drawing in public/images/categories.
+ */
 export function CategoryCard({
   category,
+  image,
 }: {
   category: { name: string; handle: string }
+  image?: { image: string | null; icon: string | null } | null
 }) {
+  const src = image?.image || image?.icon || `/images/categories/${category.handle}.png`
   return (
     <LocalizedClientLink
       href={`/categories/${category.handle}`}
@@ -14,7 +21,7 @@ export function CategoryCard({
       <div className="flex relative aspect-square overflow-hidden w-[200px]">
         <Image
           loading="lazy"
-          src={`/images/categories/${category.handle}.png`}
+          src={src}
           alt={`category - ${category.name}`}
           width={200}
           height={200}

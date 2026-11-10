@@ -2,10 +2,10 @@ import { Button } from '@/components/atoms';
 import { Carousel } from '@/components/cells';
 import LocalizedClientLink from '@/components/molecules/LocalizedLink/LocalizedLink';
 import { CategoryCard } from '@/components/organisms';
-import { listCategories } from '@/lib/data/categories';
+import { getCategoryImages, listCategories } from '@/lib/data/categories';
 
 export const EmptyCart = async () => {
-  const { categories } = await listCategories();
+  const [{ categories }, images] = await Promise.all([listCategories(), getCategoryImages()]);
 
   return (
     <div>
@@ -27,6 +27,7 @@ export const EmptyCart = async () => {
           <CategoryCard
             key={category.id}
             category={category}
+            image={images[category.handle]}
           />
         ))}
       />

@@ -76,3 +76,23 @@ export const collectCategorySubtreeIds = (
   }
   return ids;
 };
+
+export type CategoryImages = Record<string, { image: string | null; icon: string | null }>;
+
+/**
+ * Pictures set in admin → Categories (Media, Icon), by category handle.
+ * Re-read every 5 minutes, so a new picture shows up shortly after saving.
+ */
+export const getCategoryImages = async (): Promise<CategoryImages> => {
+  const backend = process.env.MEDUSA_BACKEND_URL || 'http://localhost:9000';
+  try {
+    const res = await fetch(`${backend}/store/category-images`, {
+      headers: { 'x-publishable-api-key': process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY || '' },
+      next: { revalidate: 300, tags: [CACHE_TAGS.categories] },
+    });
+    if (!res.ok) return {};
+    return ((await res.json()) as { images?: CategoryImages }).images ?? {};
+  } catch {
+    return {};
+  }
+};
