@@ -3,6 +3,7 @@ import { Badge, Button, Container, Heading, Input, Text } from "@medusajs/ui"
 import { Tag } from "@medusajs/icons"
 import type { RouteConfig } from "@mercurjs/dashboard-sdk"
 import { getAuthHeaders } from "@mercurjs/vendor"
+declare const __BACKEND_URL__: string
 
 export const config: RouteConfig = {
   label: "Quantity prices",
