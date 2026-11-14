@@ -130,6 +130,17 @@ export const CartItemsProducts = ({
                 </div>
                 <div className="mt-4 flex items-center gap-2 lg:mt-0 lg:block lg:text-right">
                   <p className="label-lg" data-testid="cart-item-price">{total}</p>
+                  {(() => {
+                    // Quantity price applied by the server ("4+: $9 each").
+                    const m = (product.metadata ?? {}) as { quantity_price?: number; regular_unit_price?: number };
+                    const each = Number(m.quantity_price) || 0;
+                    const saved = ((Number(m.regular_unit_price) || 0) - each) * product.quantity;
+                    return each && saved > 0.004 ? (
+                      <p className="text-[13px] font-bold text-[#15803d]" data-testid="cart-item-quantity-price">
+                        {convertToLocale({ amount: each, currency_code })} each · you save {convertToLocale({ amount: saved, currency_code })}
+                      </p>
+                    ) : null;
+                  })()}
                 </div>
               </div>
             </div>

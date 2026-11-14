@@ -656,6 +656,7 @@ export type Routes = {
                 calculate: typeof import("@medusajs/medusa/api/store/shipping-options/[id]/calculate/route");
             };
         };
+        categoryImages: typeof import("../src/api/store/category-images/route");
         custom: typeof import("../src/api/store/custom/route");
         delivery: {
             places: typeof import("../src/api/store/delivery/places/route");
@@ -955,5 +956,8 @@ export type Routes = {
         stores: typeof import("@mercurjs/core/api/vendor/stores/route");
         uploads: typeof import("@mercurjs/core/api/vendor/uploads/route");
         listings: typeof import("../src/api/vendor/listings/route");
+        quantityPrices: typeof import("../src/api/vendor/quantity-prices/route") & {
+            $offerId: typeof import("../src/api/vendor/quantity-prices/[offer_id]/route");
+        };
     };
 };

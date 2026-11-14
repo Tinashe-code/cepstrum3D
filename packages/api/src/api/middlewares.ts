@@ -21,6 +21,7 @@ import { guardRecipientCodes, guardRecipientCodesAtCheckout } from "../lib/promo
 import { refreshDeliveryOverrides } from "../lib/delivery/overrides";
 import { mergeIntoPendingProductChange } from "../lib/listings/merge-product-changes";
 import { matchAttributeFilters } from "../lib/catalog/attribute-filter";
+import { quantityPricesAfterCartChange, quantityPricesBeforeCheckout } from "../lib/sales/quantity-prices";
 import {
   emailAdminsOnNewProduct,
   emailVendorOnProductDecision,
@@ -118,6 +119,9 @@ export default defineMiddlewares({
     { method: ["GET"], matcher: "/store/offers", middlewares: [hideBlockedOffers] },
     { method: ["GET"], matcher: "/store/offers/:id", middlewares: [hideBlockedOffer] },
     { method: ["POST"], matcher: "/store/carts/:id/line-items", middlewares: [guardBlockedOfferInCart] },
+    // Quantity price ranges ("4 and above: $9 each"): re-price the cart after every item change.
+    { method: ["POST"], matcher: "/store/carts/:id/line-items", middlewares: [quantityPricesAfterCartChange] },
+    { method: ["POST"], matcher: "/store/carts/:id/line-items/:line_id", middlewares: [quantityPricesAfterCartChange] },
     { method: ["POST"], matcher: "/admin/products/:id/confirm", middlewares: [emailVendorOnProductDecision("approved")] },
     { method: ["POST"], matcher: "/admin/products/:id/reject", middlewares: [emailVendorOnProductDecision("rejected")] },
     {
@@ -151,7 +155,7 @@ export default defineMiddlewares({
     {
       method: ["POST"],
       matcher: "/store/carts/:id/complete",
-      middlewares: [guardPodCartCompletion, guardSaleLimits, guardRecipientCodesAtCheckout, guardBlockedOffersAtCheckout],
+      middlewares: [quantityPricesBeforeCheckout, guardPodCartCompletion, guardSaleLimits, guardRecipientCodesAtCheckout, guardBlockedOffersAtCheckout],
     },
     {
       // "Fulfillment" filter on the admin and vendor order lists. Wildcard matchers

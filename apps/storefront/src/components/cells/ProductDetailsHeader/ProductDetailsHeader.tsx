@@ -21,6 +21,8 @@ import { SellerDTO } from "@mercurjs/types"
 import { toast } from "@/lib/helpers/toast"
 import { useCartContext } from "@/components/providers"
 import { isProductPayOnDelivery } from "@/lib/helpers/pay-on-delivery"
+import { QuantityPricing } from "@/components/molecules/QuantityPricing/QuantityPricing"
+import { priceTable, readQuantityRanges, unitPriceFor } from "@/lib/helpers/quantity-prices"
 
 const optionsAsKeymap = (
   variantOptions: HttpTypes.StoreProductVariant["options"]
@@ -128,7 +130,20 @@ export const ProductDetailsHeader = ({
   const quantityInCart =
     cart?.items?.find((item) => item.metadata?.offer_id === winnerOffer?.id)
       ?.quantity ?? 0
-  const isStockMaxLimitReached = quantityInCart >= offerStock
+  // Quantity price ranges ("4+: $9 each"): the customer picks how many; the
+  // price per item depends on the total quantity of this item in the cart.
+  const ranges = readQuantityRanges(winnerOffer?.metadata)
+  const table = hasOffer ? priceTable(offerAmount as number, ranges) : []
+  const [pickQty, setPickQty] = useState(1)
+  useEffect(() => setPickQty(1), [winnerOffer?.id])
+  const addQty = table.length ? pickQty : 1
+  const lineQty = quantityInCart + addQty
+  const addTotal = hasOffer
+    ? unitPriceFor(lineQty, offerAmount as number, ranges) * lineQty -
+      unitPriceFor(quantityInCart, offerAmount as number, ranges) * quantityInCart
+    : 0
+
+  const isStockMaxLimitReached = quantityInCart + addQty > offerStock
 
   const isAddToCartDisabled =
     !hasOffer || !offerStock || isStockMaxLimitReached
@@ -136,14 +151,16 @@ export const ProductDetailsHeader = ({
   const handleAddToCart = async () => {
     if (!winnerOffer || isAddToCartDisabled) return
 
-    const total = offerAmount as number
+    const total = addTotal
     const subtotal =
-      winnerOffer.calculated_price?.calculated_amount_without_tax ?? total
+      addQty === 1 && !ranges.length
+        ? winnerOffer.calculated_price?.calculated_amount_without_tax ?? total
+        : total
 
     const storeCartLineItem = {
       thumbnail: product.thumbnail || "",
       product_title: product.title,
-      quantity: 1,
+      quantity: addQty,
       subtotal,
       total,
       tax_total: total - subtotal,
@@ -158,7 +175,7 @@ export const ProductDetailsHeader = ({
     try {
       await addToCart({
         offerId: winnerOffer.id,
-        quantity: 1,
+        quantity: addQty,
         countryCode: locale,
       })
     } catch (error) {
@@ -231,6 +248,17 @@ export const ProductDetailsHeader = ({
       {hasAnyPrice && (
         <ProductVariants product={product} selectedVariant={selectedVariant} offers={offers} />
       )}
+      {table.length > 0 && (
+        <QuantityPricing
+          rows={table}
+          regular={offerAmount as number}
+          ranges={ranges}
+          quantity={pickQty}
+          onQuantity={setPickQty}
+          max={Math.max(offerStock - quantityInCart, 1)}
+          currency={offerCurrency}
+        />
+      )}
       <Button
         onClick={handleAddToCart}
         disabled={isAddToCartDisabled}
@@ -241,9 +269,11 @@ export const ProductDetailsHeader = ({
       >
         {!hasOffer
           ? "NOT AVAILABLE"
-          : offerStock
-          ? "ADD TO CART"
-          : "OUT OF STOCK"}
+          : !offerStock
+          ? "OUT OF STOCK"
+          : addQty > 1
+          ? `ADD ${addQty} TO CART · ${convertToLocale({ amount: addTotal, currency_code: offerCurrency })}`
+          : "ADD TO CART"}
       </Button>
       {otherOffersCount > 0 && (
         <Button
